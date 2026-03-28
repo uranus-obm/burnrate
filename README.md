@@ -1,0 +1,16 @@
+# Expense Tracker API
+
+I'm building this expense tracker API as a learning project. 
+It's designed for freelancers to track their expenses, detect 
+spending patterns, and predict month-end spend.
+
+Still a work in progress — building it step by step.
+
+## What's done
+- [x] Basic CRUD API with FastAPI
+
+## What's coming
+- [ ] Real database
+- [ ] Projects and clients
+- [ ] Recurring expense detection
+- [ ] Predictions and insights
