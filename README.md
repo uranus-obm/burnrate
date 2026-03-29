@@ -18,4 +18,7 @@ Still a work in progress — building it step by step.
    ```bash
    git clone https://github.com/onukul/expense-tracker-api.git
    cd expense-tracker-api
-   
+   Install dependencies
+   pip install -r requirements.txt
+   Run the dev server
+   uvicorn main:app --reload
