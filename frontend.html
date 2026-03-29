@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>expense tracker api frontend</title>
+<style>
+body {
+    margin: 0;
+    font-family: system-ui, sans-serif;
+    background: #0f1115;
+    color: #e5e7eb;
+}
+.container {
+    max-width: 700px;
+    margin: 40px auto;
+    padding: 20px;
+}
+h1 {
+    font-size: 20px;
+    font-weight: 500;
+    margin-bottom: 20px;
+}
+.section {
+    margin-bottom: 25px;
+}
+input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    background: #161a22;
+    border: 1px solid #2a2f3a;
+    color: #e5e7eb;
+    outline: none;
+}
+input:focus {
+    border-color: #3b82f6;
+}
+button {
+    padding: 10px 14px;
+    background: #1f2937;
+    border: 1px solid #2a2f3a;
+    color: #e5e7eb;
+    cursor: pointer;
+}
+button:hover {
+    background: #2a2f3a;
+}
+.expense {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid #222;
+}
+.expense-info {
+    font-size: 14px;
+}
+.meta {
+    font-size: 12px;
+    color: #9ca3af;
+}
+.delete-btn {
+    background: none;
+    border: none;
+    color: #ef4444;
+    cursor: pointer;
+}
+.delete-btn:hover {
+    color: #f87171;
+}
+</style>
+</head>
+<body>
+<div class="container">
+    <h1>expenses</h1>
+    <div class="section">
+        <input id="title" placeholder="title">
+        <input id="amount" type="number" placeholder="amount">
+        <input id="date" type="date">
+        <input id="category" placeholder="category">
+        <input id="notes" placeholder="notes (optional)">
+        <button onclick="addExpense()">add</button>
+    </div>
+    <div class="section">
+        <div id="expenseList"></div>
+    </div>
+</div>
+<script>
+const API = "http://127.0.0.1:8000";
+async function loadExpenses() {
+    const res = await fetch(`${API}/expenses`);
+    const data = await res.json();
+    const list = document.getElementById("expenseList");
+    list.innerHTML = "";
+    data.forEach(exp => {
+        const div = document.createElement("div");
+        div.className = "expense";
+        div.innerHTML = `
+            <div class="expense-info">
+                ${exp.title} — ₹${exp.amount}
+                <div class="meta">${exp.category} • ${exp.date}</div>
+            </div>
+            <button class="delete-btn" onclick="deleteExpense(${exp.id})">del</button>
+        `;
+        list.appendChild(div);
+    });
+}
+async function addExpense() {
+    const expense = {
+        title: title.value,
+        amount: parseFloat(amount.value),
+        date: date.value,
+        category: category.value,
+        notes: notes.value
+    };
+    await fetch(`${API}/expenses`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(expense)
+    });
+    document.querySelectorAll("input").forEach(i => i.value = "");
+    loadExpenses();
+}
+async function deleteExpense(id) {
+    await fetch(`${API}/expenses/${id}`, {
+        method: "DELETE"
+    });
+    loadExpenses();
+}
+loadExpenses();
+</script>
+</body>
+</html>
