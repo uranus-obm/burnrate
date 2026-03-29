@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>expense tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --border: rgba(255,255,255,0.06);
+    --border-hover: rgba(255,255,255,0.12);
+    --text: #e8e8f0;
+    --muted: #4a4a5e;
+    --accent: #5b6af0;
+    --accent-dim: rgba(91,106,240,0.12);
+    --green: #2dd4a0;
+    --red: #f0656b;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    font-size: 14px;
+    overflow-x: hidden;
+  }
+
+  /* subtle top glow */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(91,106,240,0.08), transparent);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── Floating notes canvas ── */
+  #notes-canvas {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+
+  .note {
+    position: absolute;
+    bottom: -80px;
+    font-family: 'DM Mono', monospace;
+    color: var(--accent);
+    opacity: 0;
+    user-select: none;
+    animation: floatUp linear infinite;
+    will-change: transform, opacity;
+  }
+
+  @keyframes floatUp {
+    0%   { transform: translateY(0)   rotate(0deg)   scale(1);    opacity: 0;    }
+    8%   { opacity: 1; }
+    80%  { opacity: 0.06; }
+    100% { transform: translateY(-105vh) rotate(25deg) scale(0.85); opacity: 0; }
+  }
+
+  /* ── Layout ── */
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 560px;
+    margin: 0 auto;
+    padding: 48px 20px 64px;
+  }
+
+  /* ── Header ── */
+  header { margin-bottom: 32px; }
+
+  .header-top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 4px;
+  }
+
+  h1 {
+    font-family: 'DM Mono', monospace;
+    font-size: 18px;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+    color: var(--text);
+  }
+
+  .version {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+  }
+
+  .header-line {
+    width: 100%;
+    height: 1px;
+    background: linear-gradient(90deg, var(--accent), transparent);
+    opacity: 0.4;
+    margin-top: 12px;
+  }
+
+  /* ── Stats ── */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 24px;
+  }
+
+  .stat {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    transition: border-color 0.2s;
+  }
+
+  .stat:hover { border-color: var(--border-hover); }
+
+  .stat-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .stat-value {
+    font-family: 'DM Mono', monospace;
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--text);
+    line-height: 1;
+  }
+
+  .stat-value.accent { color: var(--accent); }
+
+  /* ── Form ── */
+  .form-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+  }
+
+  .form-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+  .row.single { grid-template-columns: 1fr; }
+
+  input {
+    width: 100%;
+    padding: 10px 12px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.15s;
+    -webkit-appearance: none;
+  }
+
+  input::placeholder { color: var(--muted); font-size: 12px; }
+  input:focus { border-color: var(--accent); }
+  input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.3); cursor: pointer; }
+
+  .submit-btn {
+    width: 100%;
+    margin-top: 8px;
+    padding: 11px;
+    background: var(--accent);
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+  }
+
+  .submit-btn:hover  { opacity: 0.88; }
+  .submit-btn:active { transform: scale(0.99); }
+
+  /* ── List ── */
+  .list-meta {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.14em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  .expense-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 13px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 6px;
+    animation: fadeIn 0.25s ease forwards;
+    transition: border-color 0.15s;
+  }
+
+  .expense-item:hover { border-color: var(--border-hover); }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .cat-pill {
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background: var(--accent-dim);
+    color: var(--accent);
+    white-space: nowrap;
+    flex-shrink: 0;
+    text-transform: lowercase;
+  }
+
+  .expense-title {
+    flex: 1;
+    font-size: 13px;
+    font-weight: 400;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .expense-date {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .expense-amount {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--green);
+    white-space: nowrap;
+  }
+
+  .del-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    padding: 2px 4px;
+    border-radius: 4px;
+    transition: color 0.15s, background 0.15s;
+    flex-shrink: 0;
+  }
+
+  .del-btn:hover { color: var(--red); background: rgba(240,101,107,0.08); }
+
+  .empty {
+    text-align: center;
+    padding: 40px 0;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.06em;
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: var(--surface);
+    border: 1px solid var(--border-hover);
+    color: var(--red);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    padding: 10px 16px;
+    border-radius: 8px;
+    z-index: 99;
+    display: none;
+    animation: fadeIn 0.2s ease;
+  }
+</style>
+</head>
+<body>
+
+<div id="notes-canvas"></div>
+
+<div class="container">
+  <header>
+    <div class="header-top">
+      <h1>expense tracker</h1>
+      <span class="version">v0.1</span>
+    </div>
+    <div class="header-line"></div>
+  </header>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-label">total</div>
+      <div class="stat-value accent" id="total">₹0</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">this month</div>
+      <div class="stat-value" id="monthly">₹0</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">entries</div>
+      <div class="stat-value" id="count">0</div>
+    </div>
+  </div>
+
+  <div class="form-wrap">
+    <div class="form-label">new entry</div>
+    <div class="row single"><input id="title" placeholder="title"></div>
+    <div class="row">
+      <input id="amount" type="number" placeholder="amount (₹)">
+      <input id="date" type="date">
+    </div>
+    <div class="row single"><input id="category" placeholder="category"></div>
+    <div class="row single"><input id="notes" placeholder="notes (optional)"></div>
+    <button class="submit-btn" onclick="addExpense()">add_expense →</button>
+  </div>
+
+  <div class="list-meta">recent entries</div>
+  <div id="expenseList"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = "http://127.0.0.1:8000";
+
+/* ── Floating ₹ notes ── */
+const canvas = document.getElementById('notes-canvas');
+const symbols = ['₹', '₹', '₹', '₹', '₹', '₹', '10', '50', '100', '500'];
+const sizes   = [11, 13, 15, 18, 22, 28, 32];
+
+function spawnNote() {
+  const el = document.createElement('span');
+  el.className = 'note';
+  el.textContent = symbols[Math.floor(Math.random() * symbols.length)];
+
+  const size     = sizes[Math.floor(Math.random() * sizes.length)];
+  const left     = Math.random() * 100;
+  const duration = 12 + Math.random() * 20;
+  const delay    = Math.random() * 8;
+  const opacity  = 0.04 + Math.random() * 0.07;
+
+  el.style.cssText = `
+    left: ${left}%;
+    font-size: ${size}px;
+    opacity: 0;
+    animation-duration: ${duration}s;
+    animation-delay: ${delay}s;
+    --max-opacity: ${opacity};
+  `;
+
+  canvas.appendChild(el);
+
+  // remove after one full cycle to keep DOM clean
+  setTimeout(() => el.remove(), (duration + delay + 1) * 1000);
+}
+
+// spawn notes in batches
+function spawnBatch() {
+  const count = 3 + Math.floor(Math.random() * 3);
+  for (let i = 0; i < count; i++) spawnNote();
+}
+
+spawnBatch();
+setInterval(spawnBatch, 4000);
+
+/* ── Toast ── */
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 3000);
+}
+
+/* ── API calls ── */
+async function loadExpenses() {
+  try {
+    const res = await fetch(`${API}/expenses`);
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    renderList(data);
+    updateStats(data);
+  } catch {
+    showToast('cannot connect — is uvicorn running?');
+  }
+}
+
+function updateStats(data) {
+  const total = data.reduce((s, e) => s + e.amount, 0);
+  const now = new Date();
+  const monthly = data
+    .filter(e => {
+      const d = new Date(e.date);
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    })
+    .reduce((s, e) => s + e.amount, 0);
+  document.getElementById('total').textContent   = '₹' + total.toLocaleString('en-IN');
+  document.getElementById('monthly').textContent = '₹' + monthly.toLocaleString('en-IN');
+  document.getElementById('count').textContent   = data.length;
+}
+
+function renderList(data) {
+  const list = document.getElementById('expenseList');
+  if (!data.length) {
+    list.innerHTML = '<div class="empty">no entries yet</div>';
+    return;
+  }
+  list.innerHTML = [...data].reverse().map(e => `
+    <div class="expense-item">
+      <span class="cat-pill">${e.category}</span>
+      <span class="expense-title">${e.title}</span>
+      <span class="expense-date">${e.date}</span>
+      <span class="expense-amount">₹${e.amount.toLocaleString('en-IN')}</span>
+      <button class="del-btn" onclick="deleteExpense(${e.id})">×</button>
+    </div>
+  `).join('');
+}
+
+async function addExpense() {
+  const title    = document.getElementById('title').value.trim();
+  const amount   = parseFloat(document.getElementById('amount').value);
+  const date     = document.getElementById('date').value;
+  const category = document.getElementById('category').value.trim();
+  const notes    = document.getElementById('notes').value.trim();
+
+  if (!title || !amount || !date || !category) {
+    showToast('fill in all required fields');
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API}/expenses`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, amount, date, category, notes: notes || null })
+    });
+    if (!res.ok) throw new Error();
+    document.querySelectorAll('input').forEach(i => i.value = '');
+    document.getElementById('date').valueAsDate = new Date();
+    loadExpenses();
+  } catch {
+    showToast('failed to add expense');
+  }
+}
+
+async function deleteExpense(id) {
+  try {
+    await fetch(`${API}/expenses/${id}`, { method: 'DELETE' });
+    loadExpenses();
+  } catch {
+    showToast('failed to delete');
+  }
+}
+
+document.getElementById('date').valueAsDate = new Date();
+loadExpenses();
+</script>
+</body>
+</html>
