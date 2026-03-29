@@ -9,11 +9,11 @@ Still a work in progress — building it step by step.
 ## What's done
 - [x] Basic CRUD API with FastAPI
 
-## What's coming
-- [ ] Real database
-- [ ] Projects and clients
-- [ ] Recurring expense detection
-- [ ] Predictions and insights
+Modifications Done So Far
+Added support for a real database.
+Implemented Projects and Clients management.
+Added basic HTML frontend files (index.html and frontend.html) for easier testing and demo.
+Improved overall project structure and code readability.
  
  Clone the repository:
    ```bash
