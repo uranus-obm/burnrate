@@ -14,6 +14,7 @@ Still a work in progress — building it step by step.
 - [ ] Projects and clients
 - [ ] Recurring expense detection
 - [ ] Predictions and insights
+ 
  Clone the repository:
    ```bash
    git clone https://github.com/onukul/expense-tracker-api.git
