@@ -18,7 +18,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-DATABASE_URL = os.getenv("DATABASE_URL", "ppostgresql://postgres:SwHlSpcxamhEbBlkjvNdhgVDDVxenNrJ@postgres.railway.internal:5432/railway")
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:SwHlSpcxamhEbBlkjvNdhgVDDVxenNrJ@postgres.railway.internal:5432/railway")
 engine = create_engine(DATABASE_URL)
 class Expense(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
