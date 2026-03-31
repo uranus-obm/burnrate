@@ -7,19 +7,28 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
-
 origins = [
     "https://uranus-obm.github.io",
     "http://localhost:3000",
 ]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:SwHlSpcxamhEbBlkjvNdhgVDDVxenNrJ@postgres.railway.internal:5432/railway")
+
+RAW_URL = os.getenv("DATABASE_URL", "postgresql://postgres:SwHlSpcxamhEbBlkjvNdhgVDDVxenNrJ@postgres.railway.internal:5432/railway")
+
+if RAW_URL and RAW_URL.startswith("postgresql://"):
+    DATABASE_URL = RAW_URL.replace("postgresql://", "postgresql+psycopg2://", 1)
+else:
+    DATABASE_URL = RAW_URL
+
 engine = create_engine(DATABASE_URL)
+
 class Expense(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     title: str
@@ -27,11 +36,11 @@ class Expense(SQLModel, table=True):
     date: date
     category: str
     notes: Optional[str] = None
+
 @app.on_event("startup")
 def create_tables():
     SQLModel.metadata.create_all(engine)
 
-# ── CREATE ──────────────────────────────────────
 @app.post("/expenses")
 def add_expense(expense: Expense):
     with Session(engine) as session:
@@ -40,13 +49,11 @@ def add_expense(expense: Expense):
         session.refresh(expense)
         return expense
 
-# ── READ ALL ────────────────────────────────────
 @app.get("/expenses")
 def get_expenses():
     with Session(engine) as session:
         return session.exec(select(Expense)).all()
 
-# ── READ ONE ────────────────────────────────────
 @app.get("/expenses/{expense_id}")
 def get_expense(expense_id: int):
     with Session(engine) as session:
@@ -55,23 +62,22 @@ def get_expense(expense_id: int):
             raise HTTPException(status_code=404, detail="Expense not found")
         return expense
 
-# ── UPDATE ──────────────────────────────────────
 @app.put("/expenses/{expense_id}")
 def update_expense(expense_id: int, updated: Expense):
     with Session(engine) as session:
         expense = session.get(Expense, expense_id)
         if not expense:
             raise HTTPException(status_code=404, detail="Expense not found")
-        expense.title    = updated.title
-        expense.amount   = updated.amount
-        expense.date     = updated.date
-        expense.category = updated.category
-        expense.notes    = updated.notes
+        
+        expense_data = updated.model_dump(exclude_unset=True)
+        for key, value in expense_data.items():
+            setattr(expense, key, value)
+            
+        session.add(expense)
         session.commit()
         session.refresh(expense)
         return expense
 
-# ── DELETE ──────────────────────────────────────
 @app.delete("/expenses/{expense_id}")
 def delete_expense(expense_id: int):
     with Session(engine) as session:
