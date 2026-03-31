@@ -5,6 +5,13 @@ from datetime import date
 
 app = FastAPI()
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # ── Database setup ──────────────────────────────
 DATABASE_URL = "sqlite:///expenses.db"
 engine = create_engine(DATABASE_URL)
