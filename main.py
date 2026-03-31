@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI, HTTPException
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 from typing import Optional
@@ -12,13 +13,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# ── Database setup ──────────────────────────────
-DATABASE_URL = "sqlite:///expenses.db"
+DATABASE_URL = os.getenv("DATABASE_URL", "ppostgresql://postgres:SwHlSpcxamhEbBlkjvNdhgVDDVxenNrJ@postgres.railway.internal:5432/railway")
 engine = create_engine(DATABASE_URL)
-
-# ── This is your table ──────────────────────────
-# Every field here = one column in the database
 class Expense(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     title: str
@@ -26,8 +22,6 @@ class Expense(SQLModel, table=True):
     date: date
     category: str
     notes: Optional[str] = None
-
-# ── Create tables on startup ────────────────────
 @app.on_event("startup")
 def create_tables():
     SQLModel.metadata.create_all(engine)
