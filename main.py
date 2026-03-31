@@ -7,14 +7,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
-origins = [
-    "https://uranus-obm.github.io",
-    "http://localhost:3000",
-]
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["https://uranus-obm.github.io", "http://localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -40,6 +35,14 @@ class Expense(SQLModel, table=True):
 @app.on_event("startup")
 def create_tables():
     SQLModel.metadata.create_all(engine)
+    
+@app.get("/")
+def read_root():
+    return {
+        "status": "online",
+        "message": "Burnrate Backend is Running",
+        "endpoints": ["/expenses", "/docs"]
+    }
 
 @app.post("/expenses")
 def add_expense(expense: Expense):
