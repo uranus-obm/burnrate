@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 from typing import Optional
 from datetime import date
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
